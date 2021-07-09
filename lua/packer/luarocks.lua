@@ -177,12 +177,20 @@ local function activate_hererocks_cmd(install_path)
   return fmt('source %s', util.join_paths(install_path, 'bin', activate_file))
 end
 
+local function get_luarocks_cmd(args)
+  if vim.fn.has('win32') ~= 0 then
+    return fmt("%s /C %s/luarocks/luarocks.bat %s", os.getenv('COMSPEC'), hererocks_install_dir, args)
+  else
+    return {
+      os.getenv 'SHELL',
+      '-c',
+      fmt('%s && luarocks --tree=%s %s', activate_hererocks_cmd(hererocks_install_dir), shell_hererocks_dir, args),
+    }
+  end
+end
+
 local function run_luarocks(args, disp, operation_name)
-  local cmd = {
-    os.getenv 'SHELL',
-    '-c',
-    fmt('%s && luarocks --tree=%s %s', activate_hererocks_cmd(hererocks_install_dir), shell_hererocks_dir, args),
-  }
+  local cmd = get_luarocks_cmd(args)
   return async(function()
     local output = jobs.output_table()
     local callbacks = {
